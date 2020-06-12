@@ -22,5 +22,5 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v1
         with:
-          name: whs-linux-amd64.service
-          path: build/whs-linux-amd64.service
+          name: whg-linux-amd64.service
+          path: build/whg-linux-amd64.service

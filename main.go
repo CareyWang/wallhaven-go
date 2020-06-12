@@ -22,50 +22,43 @@ func main() {
 
 	fmt.Println(*tag, *ps, *pe, *userProxy)
 
-	var detailPages []string
-
-	c := colly.NewCollector(
-		colly.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36 Edg/83.0.478.45"),
-	)
-	if *userProxy {
-		setProxy(c)
-	}
-
-	c.OnHTML(".preview", func(c *colly.HTMLElement) {
-		// 详情页 url
-		detailUrl := c.Attr("href")
-		detailPages = append(detailPages, detailUrl)
-	})
-
 	for page := *ps; page <= *pe; page++ {
+		var detailPages []string
+
+		c := colly.NewCollector(
+			colly.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36 Edg/83.0.478.45"),
+		)
+		if *userProxy {
+			setProxy(c)
+		}
+
+		c.OnHTML(".preview", func(c *colly.HTMLElement) {
+			// 详情页 url
+			detailUrl := c.Attr("href")
+			detailPages = append(detailPages, detailUrl)
+		})
+
 		toVisit := fmt.Sprintf("https://wallhaven.cc/search?q=%s&page=%d", *tag, page)
 		fmt.Println(toVisit)
-
 		_ = c.Visit(toVisit)
-	}
 
-	count := 1
-	dirCount := 1
-	for _, detailPage := range detailPages {
-		imageUrls := getImageUrls(c.Clone(), detailPage)
+		for _, detailPage := range detailPages {
+			imageUrls := getImageUrls(c.Clone(), detailPage)
 
-		log.Println(imageUrls)
+			log.Println(imageUrls)
 
-		if imageUrls != nil {
-			for _, imageUrl := range imageUrls {
-				// 每100个分个文件夹
-				path := fmt.Sprintf("images/%d/", dirCount)
-				if count%100 == 0 {
-					dirCount++
+			if imageUrls != nil {
+				for _, imageUrl := range imageUrls {
+					// 每100个分个文件夹
+					path := fmt.Sprintf("images/%s/%d/", *tag, page)
+
+					// 下载图片
+					go download(path, imageUrl)
+					time.Sleep(time.Millisecond * 100)
 				}
-				count++
-
-				// 下载图片
-				go download(path, imageUrl)
-				time.Sleep(time.Millisecond * 100)
 			}
+			time.Sleep(time.Second)
 		}
-		time.Sleep(time.Second)
 	}
 
 }
